@@ -1,0 +1,227 @@
+:PROPERTIES:
+:ID:       40B9F04B-41D5-430A-A7F7-A975A5A80748
+:END:
+#+title: Highlighting source code with tree-sitter
+#+author: Jeff Kreeftmeijer
+#+date: 2024-05-10
+
+After installing tree-sitter, highlighting a Ruby file fails because there are no language grammars installed:
+
+#+header: :exports none
+#+header: :tangle example.rb
+#+begin_src ruby
+  def main
+    "hello, world"
+  end
+#+end_src
+
+#+name: one
+#+header: :eval no
+#+begin_src shell
+  tree-sitter highlight example.rb
+#+end_src
+
+#+header: :noweb yes
+#+header: :exports results
+#+header: :results verbatim
+#+header: :prologue exec 2>&1
+#+header: :epilogue ":"
+#+header: :cache yes
+#+begin_src shell
+  nix run nixpkgs/5fd8536a9a5932d4ae8de52b7dc08d92041237fc#<<one>>
+#+end_src
+
+#+RESULTS[cbea1e62875a5f84ba3cdc3551f73b8f3a665f63]:
+#+begin_example
+Warning: You have not configured any parser directories!
+Please run `tree-sitter init-config` and edit the resulting
+configuration file to indicate where we should look for
+language grammars.
+
+No language found for path `example.rb`
+
+If a language should be associated with this file extension, please ensure the path to `example.rb` is inside one of the following directories as specified by your 'config.json':
+
+
+
+If the directory that contains the relevant grammar for `example.rb` is not listed above, please add the directory to the list of directories in your config file, which you need to create by running `tree-sitter init-config`
+
+#+end_example
+
+To set up languages, the tree-sitter utility expects a configuration file.
+One can be created by executing
+
+#+header: :eval no
+#+begin_src shell
+tree-sitter init-config
+#+end_src
+
+which generates a configuration file in a [[https://tree-sitter.github.io/tree-sitter/syntax-highlighting#per-user-configuration][platform-specific location]].
+The generated file defines a list of directories to search to find parser libraries, and a default theme for highlighting:
+
+#+caption: =/Users/jeff/Library/Application Support/tree-sitter/config.json=
+#+begin_src json
+  {
+  "parser-directories": [
+    "/Users/jeff/github",
+    "/Users/jeff/src",
+    "/Users/jeff/source"
+  ],
+  "theme": {
+    "attribute": {
+      "italic": true,
+      "color": 124
+    },
+    "constant.builtin": {
+      "bold": true,
+      "color": 94
+    },
+    "keyword": 56,
+    "property": 124,
+    "operator": {
+      "bold": true,
+      "color": 239
+    },
+    "punctuation.bracket": 239,
+    "tag": 18,
+    "constant": 94,
+    "variable.parameter": {
+      "underline": true
+    },
+    "type": 23,
+    "variable.builtin": {
+      "bold": true
+    },
+    "punctuation.delimiter": 239,
+    "constructor": 136,
+    "function.builtin": {
+      "bold": true,
+      "color": 26
+    },
+    "number": {
+      "bold": true,
+      "color": 94
+    },
+    "string.special": 30,
+    "function": 26,
+    "module": 136,
+    "string": 28,
+    "embedded": null,
+    "type.builtin": {
+      "bold": true,
+      "color": 23
+    },
+    "comment": {
+      "color": 245,
+      "italic": true
+    }
+  }
+}
+#+end_src
+ 
+Since tree-sitter version 0.22, a local configuration file can also be used.
+For example, this configuration file omits the theme but includes a single parser directory pointing to the current directory.
+
+#+caption: =config.json=
+#+header: :tangle config.json
+#+begin_src json
+{
+  "parser-directories": ["."]
+}
+#+end_src
+
+In this case, the current directory has a local of the [[https://github.com/tree-sitter/tree-sitter-ruby][tree-sitter Ruby grammar]].
+Tree-sitter searches each parser directory for sub directories with names starting with =tree-sitter-=[fn:dump-languages].
+
+#+name: two
+#+header: :exports none
+#+header: :eval no
+#+begin_src shell
+  highlight --config-path config.json --html example.rb
+#+end_src
+
+#+header: :noweb yes
+#+header: :eval no
+#+begin_src shell
+  tree-sitter <<two>>
+#+end_src
+
+#+header: :noweb yes
+#+header: :exports results
+#+header: :results verbatim
+#+header: :prologue exec 2>&1
+#+header: :epilogue ":"
+#+header: :cache yes
+#+begin_src shell
+  nix run nixpkgs/5fd8536a9a5932d4ae8de52b7dc08d92041237fc#tree-sitter -- <<two>>
+#+end_src
+
+#+RESULTS[3157287b344d205b390fa9d21c346b48c119c826]:
+#+begin_example
+
+<!doctype HTML>
+<head>
+  <title>Tree-sitter Highlighting</title>
+  <style>
+    body {
+      font-family: monospace
+    }
+    .line-number {
+      user-select: none;
+      text-align: right;
+      color: rgba(27,31,35,.3);
+      padding: 0 10px;
+    }
+    .line {
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+
+<table>
+<tr><td class=line-number>1</td><td class=line><span style='color: #5f00d7'>def</span> <span style='color: #005fd7'>main</span>
+</td></tr>
+<tr><td class=line-number>2</td><td class=line>  <span style='color: #008700'>&quot;hello, world&quot;</span>
+</td></tr>
+<tr><td class=line-number>3</td><td class=line><span style='color: #5f00d7'>end</span>
+</td></tr>
+</table>
+
+</body>
+
+#+end_example
+
+[fn:dump-languages] Use the ~tree-sitter dump-languages~ to ensure the grammars in the configuration file are loaded correctly: 
+
+#+name: dump-languages
+#+header: :exports none
+#+header: :eval no
+#+begin_src shell
+  dump-languages --config-path config.json
+#+end_src
+
+#+header: :noweb yes
+#+header: :eval no
+#+begin_src shell
+  tree-sitter <<dump-languages>>
+#+end_src
+
+#+header: :noweb yes
+#+header: :exports results
+#+header: :results verbatim
+#+header: :prologue exec 2>&1
+#+header: :epilogue ":"
+#+header: :cache yes
+#+begin_src shell
+  nix run nixpkgs/5fd8536a9a5932d4ae8de52b7dc08d92041237fc#tree-sitter -- <<dump-languages>>
+#+end_src
+
+#+RESULTS[1ea937c27f3e3899f5a458d6b97cf77813381857]:
+: scope: source.ruby
+: parser: "/Users/jeff/tree-sitter-highlight/tree-sitter-ruby/"
+: highlights: Some(["queries/highlights.scm"])
+: file_types: ["rb"]
+: content_regex: None
+: injection_regex: Some(Regex("ruby"))
+: 
