@@ -149,6 +149,7 @@ Tree-sitter searches each parser directory for sub directories with names starti
 #+header: :noweb yes
 #+header: :exports results
 #+header: :results verbatim
+#+header: :wrap src html
 #+header: :prologue exec 2>&1
 #+header: :epilogue ":"
 #+header: :cache yes
@@ -157,7 +158,7 @@ Tree-sitter searches each parser directory for sub directories with names starti
 #+end_src
 
 #+RESULTS[3157287b344d205b390fa9d21c346b48c119c826]:
-#+begin_example
+#+begin_src html
 
 <!doctype HTML>
 <head>
@@ -190,7 +191,7 @@ Tree-sitter searches each parser directory for sub directories with names starti
 
 </body>
 
-#+end_example
+#+end_src
 
 [fn:dump-languages] Use the ~tree-sitter dump-languages~ to ensure the grammars in the configuration file are loaded correctly: 
 
